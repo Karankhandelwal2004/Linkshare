@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+out.txt
+err.txt
+uvicorn_out.txt
+uvicorn_err.txt
+.venv/
+requirements-lock.txt
+code/.venv/

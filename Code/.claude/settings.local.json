@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /mnt/c/Code && python --version 2>&1 || python3 --version 2>&1)",
+      "Read(//mnt/c/**)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, State, OwningProcess | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{Port=$_.LocalPort; State=$_.State; PID=$_.OwningProcess; ProcessName=$p.Name; CommandLine=\\(Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.OwningProcess\\)\" -ErrorAction SilentlyContinue\\).CommandLine} })",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:3000/api/device-names\" -UseBasicParsing)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Code\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "PowerShell($pids = \\(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue\\).OwningProcess | Select-Object -Unique; foreach \\($p in $pids\\) { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 2; cd c:\\\\Code; Start-Process -FilePath \"python\" -ArgumentList \"-m\", \"uvicorn\", \"server:app\", \"--host\", \"0.0.0.0\", \"--port\", \"3000\" -NoNewWindow -RedirectStandardOutput \"C:\\\\Code\\\\uvicorn_out.txt\" -RedirectStandardError \"C:\\\\Code\\\\uvicorn_err.txt\"; Start-Sleep -Seconds 5; Get-Content \"C:\\\\Code\\\\uvicorn_err.txt\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+# Generated from local environment; pin exact versions for production
+
+--requirement requirements-lock.txt
+

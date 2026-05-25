@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkShare — Authenticate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070b10;
+      --card: #0d1520;
+      --border: #1c2d3f;
+      --text: #c8d8e4;
+      --text-dim: #4d6a7a;
+      --accent: #00e87a;
+      --accent-dim: rgba(0,232,122,0.15);
+      --accent-glow: rgba(0,232,122,0.4);
+      --cyan: #00bbee;
+      --error: #ff3355;
+      --mono: 'Space Mono', monospace;
+      --display: 'Syne', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ── Grid background ── */
+    .grid-bg {
+      position: fixed;
+      inset: -60px;
+      background-image:
+        linear-gradient(rgba(0,232,122,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,232,122,0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridDrift 14s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes gridDrift {
+      from { transform: translate(0,0); }
+      to   { transform: translate(48px,48px); }
+    }
+
+    .scanlines {
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+      pointer-events: none; z-index: 1;
+    }
+
+    .corner { position: fixed; width: 56px; height: 56px; opacity: 0.3; z-index: 2; }
+    .corner-tl { top:20px; left:20px;   border-top:1px solid var(--accent); border-left:1px solid var(--accent); }
+    .corner-tr { top:20px; right:20px;  border-top:1px solid var(--accent); border-right:1px solid var(--accent); }
+    .corner-bl { bottom:20px; left:20px;  border-bottom:1px solid var(--accent); border-left:1px solid var(--accent); }
+    .corner-br { bottom:20px; right:20px; border-bottom:1px solid var(--accent); border-right:1px solid var(--accent); }
+
+    .status-line {
+      position: fixed; bottom: 12px; left: 0; right: 0;
+      text-align: center; font-size: 0.58rem; letter-spacing: 0.22em;
+      color: var(--text-dim); z-index: 2;
+    }
+    .blink { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--accent);
+      box-shadow:0 0 6px var(--accent); margin-right:6px; vertical-align:middle;
+      animation: blinkAnim 2s step-end infinite; }
+    @keyframes blinkAnim { 0%,100%{opacity:1} 50%{opacity:0.15} }
+
+    /* ── Container ── */
+    .container {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 430px; padding: 20px;
+      animation: fadeUp 0.5s ease 0.15s both;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(14px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ── Logo ── */
+    .logo-area { text-align: center; margin-bottom: 28px; }
+    .logo-text {
+      font-family: var(--display); font-size: 2.8rem; font-weight: 800;
+      letter-spacing: 0.12em; color: var(--accent);
+      text-shadow: 0 0 28px var(--accent-glow), 0 0 56px rgba(0,232,122,0.15);
+      animation: logoPulse 3.5s ease-in-out infinite; min-height: 1.2em;
+    }
+    @keyframes logoPulse {
+      0%,100% { text-shadow: 0 0 28px var(--accent-glow), 0 0 56px rgba(0,232,122,0.15); }
+      50%      { text-shadow: 0 0 40px var(--accent-glow), 0 0 80px rgba(0,232,122,0.25); }
+    }
+    .logo-sub { font-size: 0.58rem; letter-spacing: 0.3em; color: var(--text-dim); margin-top: 8px; }
+
+    /* ── Card ── */
+    .login-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 4px; padding: 28px 28px 24px; position: relative;
+    }
+    .login-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 4px;
+      background: linear-gradient(135deg, rgba(0,232,122,0.05) 0%, transparent 50%, rgba(0,187,238,0.03) 100%);
+      pointer-events: none;
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex; border-bottom: 1px solid var(--border); margin-bottom: 22px;
+    }
+    .tab-btn {
+      flex: 1; background: transparent; border: none; border-bottom: 2px solid transparent;
+      color: var(--text-dim); font-family: var(--mono); font-size: 0.62rem;
+      letter-spacing: 0.22em; padding: 8px 4px; cursor: pointer;
+      transition: color 0.18s, border-color 0.18s; margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Form groups ── */
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 0.58rem; letter-spacing: 0.25em; color: var(--text-dim); margin-bottom: 7px; }
+
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▾'; position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%); color: var(--accent); pointer-events: none;
+    }
+
+    select, input[type="text"], input[type="password"] {
+      width: 100%; background: rgba(0,0,0,0.45); border: 1px solid var(--border);
+      border-radius: 3px; color: var(--text); font-family: var(--mono);
+      font-size: 0.82rem; padding: 10px 13px; outline: none;
+      appearance: none; -webkit-appearance: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    select:focus, input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-dim), inset 0 0 14px rgba(0,232,122,0.02);
+    }
+    select option { background: #0d1520; color: var(--text); }
+
+    /* ── Icon grid ── */
+    .icon-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px;
+    }
+    .icon-opt {
+      aspect-ratio: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+      border-radius: 3px; font-size: 1.4rem; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .icon-opt:hover { border-color: var(--border); background: rgba(0,232,122,0.06); }
+    .icon-opt.selected { border-color: var(--accent); background: rgba(0,232,122,0.1); }
+
+    /* hidden input that stores chosen icon */
+    #reg-icon { display: none; }
+
+    /* ── Error ── */
+    .error-msg {
+      font-size: 0.65rem; letter-spacing: 0.08em; color: var(--error);
+      min-height: 1.3em; margin-bottom: 14px; opacity: 0; transition: opacity 0.15s;
+    }
+    .error-msg.show { opacity: 1; animation: shake 0.32s ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+    /* ── Button ── */
+    .submit-btn {
+      width: 100%; background: transparent; border: 1px solid var(--accent);
+      border-radius: 3px; color: var(--accent); font-family: var(--mono);
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.24em;
+      padding: 12px; cursor: pointer; transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.1s;
+    }
+    .submit-btn:hover:not(:disabled) { background: var(--accent); color: var(--bg); box-shadow: 0 0 20px var(--accent-glow); }
+    .submit-btn:active:not(:disabled) { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-spinner { display: none; }
+    .submit-btn.loading .btn-text    { display: none; }
+    .submit-btn.loading .btn-spinner { display: inline; }
+
+    .tab-form { display: none; }
+    .tab-form.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="scanlines"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+  <div class="status-line"><span class="blink"></span>LINKSHARE — SECURE LINK TRANSFER PROTOCOL</div>
+
+  <div class="container">
+    <div class="logo-area">
+      <div class="logo-text" id="logo-text"></div>
+      <div class="logo-sub">MULTI-DEVICE LINK SHARING</div>
+    </div>
+
+    <div class="login-card">
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="login">LOGIN</button>
+        <button class="tab-btn"        data-tab="register">REGISTER</button>
+      </div>
+
+      <!-- ── Login form ── -->
+      <form id="login-form" class="tab-form active" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label" for="login-name">DEVICE NAME</label>
+          <input type="text" id="login-name" placeholder="Enter your device name" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-pass">ACCESS KEY</label>
+          <input type="password" id="login-pass" placeholder="••••••••••" autocomplete="current-password" required>
+        </div>
+        <div class="error-msg" id="login-error"></div>
+        <button type="submit" class="submit-btn" id="login-btn">
+          <span class="btn-text">AUTHENTICATE</span>
+          <span class="btn-spinner">VERIFYING...</span>
+        </button>
+      </form>
+
+      <!-- ── Register form ── -->
+      <form id="register-form" class="tab-form" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label" for="reg-name">DEVICE NAME</label>
+          <input type="text" id="reg-name" placeholder="Choose a unique name (max 32 chars)" maxlength="32" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">DEVICE ICON</label>
+          <div class="icon-grid" id="icon-grid">
+            <!-- populated by JS -->
+          </div>
+          <input type="hidden" id="reg-icon" value="💻">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-pass">ACCESS KEY</label>
+          <input type="password" id="reg-pass" placeholder="Min. 6 characters" autocomplete="new-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-confirm">CONFIRM KEY</label>
+          <input type="password" id="reg-confirm" placeholder="Repeat password" autocomplete="new-password" required>
+        </div>
+        <div class="error-msg" id="register-error"></div>
+        <button type="submit" class="submit-btn" id="register-btn">
+          <span class="btn-text">CREATE DEVICE</span>
+          <span class="btn-spinner">REGISTERING...</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ── Logo typewriter ────────────────────────────────────────────────────
+    (function () {
+      const el = document.getElementById('logo-text');
+      const text = 'LINKSHARE';
+      let i = 0;
+      el.textContent = '_';
+      const t = setInterval(() => {
+        if (i < text.length) { el.textContent = text.slice(0, ++i) + '_'; }
+        else { el.textContent = text; clearInterval(t); }
+      }, 90);
+    })();
+
+    // ── Icon picker ────────────────────────────────────────────────────────
+    const ICONS = ['💻','🖥️','📱','⌨️','💾','📡','🖨️','🔌','🔒','⚙️','📲','🖱️','📺','🎮','⚡'];
+    const iconGrid = document.getElementById('icon-grid');
+    const iconInput = document.getElementById('reg-icon');
+
+    ICONS.forEach((emoji, idx) => {
+      const cell = document.createElement('div');
+      cell.className = 'icon-opt' + (idx === 0 ? ' selected' : '');
+      cell.textContent = emoji;
+      cell.addEventListener('click', () => {
+        document.querySelectorAll('.icon-opt').forEach(c => c.classList.remove('selected'));
+        cell.classList.add('selected');
+        iconInput.value = emoji;
+      });
+      iconGrid.appendChild(cell);
+    });
+
+    // ── Tab switching ──────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.tab-form').forEach(f => f.classList.toggle('active', f.id === tab + '-form'));
+        clearErrors();
+      });
+    });
+
+    // ── Login submit ───────────────────────────────────────────────────────
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name     = document.getElementById('login-name').value.trim();
+      const password = document.getElementById('login-pass').value;
+      if (!name)     { showError('login-error', '⚠  DEVICE NAME IS REQUIRED'); return; }
+      if (!password) { showError('login-error', '⚠  ACCESS KEY IS REQUIRED'); return; }
+
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true; btn.classList.add('loading'); clearErrors();
+
+      try {
+        const fd = new FormData();
+        fd.append('name', name); fd.append('password', password);
+        const res  = await fetch('/login', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (res.ok) { window.location.href = '/public/dashboard.html'; }
+        else {
+          showError('login-error', '⚠  ' + (data.error || 'AUTHENTICATION FAILED').toUpperCase());
+          btn.disabled = false; btn.classList.remove('loading');
+        }
+      } catch {
+        showError('login-error', '⚠  CONNECTION ERROR — TRY AGAIN');
+        btn.disabled = false; btn.classList.remove('loading');
+      }
+    });
+
+    // ── Register submit ────────────────────────────────────────────────────
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name    = document.getElementById('reg-name').value.trim();
+      const icon    = document.getElementById('reg-icon').value;
+      const pass    = document.getElementById('reg-pass').value;
+      const confirm = document.getElementById('reg-confirm').value;
+
+      if (!name)           { showError('register-error', '⚠  DEVICE NAME IS REQUIRED'); return; }
+      if (!pass)           { showError('register-error', '⚠  ACCESS KEY IS REQUIRED'); return; }
+      if (pass.length < 6) { showError('register-error', '⚠  ACCESS KEY MUST BE AT LEAST 6 CHARACTERS'); return; }
+      if (pass !== confirm) { showError('register-error', '⚠  ACCESS KEYS DO NOT MATCH'); return; }
+
+      const btn = document.getElementById('register-btn');
+      btn.disabled = true; btn.classList.add('loading'); clearErrors();
+
+      try {
+        const fd = new FormData();
+        fd.append('name', name); fd.append('password', pass); fd.append('icon', icon);
+        const res  = await fetch('/register', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (res.ok) { window.location.href = '/public/dashboard.html'; }
+        else {
+          showError('register-error', '⚠  ' + (data.error || 'REGISTRATION FAILED').toUpperCase());
+          btn.disabled = false; btn.classList.remove('loading');
+        }
+      } catch {
+        showError('register-error', '⚠  CONNECTION ERROR — TRY AGAIN');
+        btn.disabled = false; btn.classList.remove('loading');
+      }
+    });
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.remove('show');
+      void el.offsetWidth;
+      el.classList.add('show');
+    }
+    function clearErrors() {
+      document.querySelectorAll('.error-msg').forEach(el => {
+        el.textContent = ''; el.classList.remove('show');
+      });
+    }
+  </script>
+</body>
+</html>
