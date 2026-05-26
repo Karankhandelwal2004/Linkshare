@@ -29,12 +29,14 @@ This guide walks you through deploying the LinkShare FastAPI app to Render.
 2. Choose **"Deploy from a Git repository"**
 3. Click **"Connect GitHub"** and authorize Render
 4. Select repository: **Karankhandelwal2004/Linkshare**
-5. Leave defaults:
+5. Configure the service:
    - **Name**: `linkshare` (or your choice)
    - **Runtime**: Python 3 (auto-detected)
-   - **Build Command**: (leave blank or `pip install -r Code/requirements-lock.txt`)
-   - **Start Command**: `cd Code && uvicorn server:app --host 0.0.0.0 --port $PORT`
+   - **Build Command**: (leave blank — Render will auto-detect)
+   - **Start Command**: (leave blank — Render will use `Procfile`)
    - **Free tier** ✓ (or upgrade to paid)
+
+   **Note:** Render automatically detects the `Procfile` in the repo root and uses it to run the service.
 
 ## Step 4: Set Environment Variables
 
@@ -45,7 +47,6 @@ Click **"Advanced"** and add the following **Environment Variables**:
 | `MONGODB_URL` | Your MongoDB Atlas connection string from Step 1 |
 | `SECRET_KEY` | Generate a random string (e.g., `python -c "import secrets; print(secrets.token_urlsafe(32))"`) |
 | `ADMIN_PASSWORD` | Your admin password (e.g., `YourSecurePassword123!`) |
-| `PORT` | `3000` (auto-set by Render, but you can override) |
 
 Example `MONGODB_URL`:
 ```
